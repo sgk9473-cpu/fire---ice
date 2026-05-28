@@ -1,0 +1,2040 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>森林冰火人</title>
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --surface: #fffdf8;
+      --surface-2: #f0eee7;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d8d2c4;
+      --primary: #0f766e;
+      --primary-strong: #115e59;
+      --focus: #2563eb;
+      --danger: #b42318;
+      --path: #38a169;
+      --searched: #8ecae6;
+      --frontier: #f6c85f;
+      --fireboy: #ef6c55;
+      --watergirl: #42a5f5;
+      --mud: #66bb6a;
+      --gate: #795548;
+      --ruby: #e53935;
+      --sapphire: #1e88e5;
+      --button: #ffa726;
+      --lever: #ab47bc;
+      --exit-fire: #e53935;
+      --exit-water: #1e88e5;
+      --plain: #c8c2b4;
+      --water: #42a5f5;
+      --lava: #ef5350;
+      --wall: #37474f;
+      --cell-size: 36px;
+      color-scheme: light;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 32%),
+        linear-gradient(315deg, rgba(220, 38, 38, 0.07), transparent 30%),
+        var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      border-color: #a8a095;
+      background: #ffffff;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    .cell:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.35);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+      white-space: nowrap;
+    }
+
+    .app {
+      width: min(1500px, calc(100vw - 32px));
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: 18px 0 20px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 14px;
+    }
+
+    .topbar {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 14px 34px rgba(55, 47, 36, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.25rem, 1.6vw + 0.9rem, 2rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .status-pill {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      border-radius: 8px;
+      background: #e5f4ef;
+      color: #0f4d45;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .map-panel,
+    .control-panel,
+    .timeline {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: 0 14px 34px rgba(55, 47, 36, 0.08);
+    }
+
+    .map-panel {
+      min-width: 0;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 12px;
+    }
+
+    .map-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label,
+    .group-title {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    select,
+    input[type="number"] {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 0 12px;
+      color: var(--ink);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .toolbar-actions,
+    .segmented,
+    .terrain-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .icon-btn,
+    .action-btn,
+    .terrain-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      font-weight: 800;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--primary-strong);
+      border-color: var(--primary-strong);
+    }
+
+    .danger {
+      color: var(--danger);
+      border-color: rgba(180, 35, 24, 0.32);
+    }
+
+    .board-wrap {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      padding: 8px;
+      border: 1px solid #d6d0c2;
+      border-radius: 8px;
+      background: #263238;
+    }
+
+    .board {
+      display: grid;
+      gap: 0;
+      padding: 0;
+      border-radius: 4px;
+      background: transparent;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .cell {
+      position: relative;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      min-width: var(--cell-size);
+      min-height: var(--cell-size);
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .cell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .cell.searched::before {
+      background: var(--searched);
+      opacity: 0.62;
+    }
+
+    .cell.frontier::before {
+      background: var(--frontier);
+      opacity: 0.78;
+    }
+
+    .cell.path::before {
+      background: var(--path);
+      opacity: 0.78;
+    }
+
+    .cell.stuck::before {
+      background: var(--danger);
+      opacity: 0.64;
+    }
+
+    .cell.plain { background: var(--plain); }
+    .cell.water { background: var(--water); }
+    .cell.lava { background: var(--lava); }
+    .cell.mud { background: var(--mud); }
+    .cell.gate { background: var(--gate); }
+    .cell.button { background: var(--button); }
+    .cell.exit-fire { background: var(--exit-fire); }
+    .cell.exit-water { background: var(--exit-water); }
+    .cell.wall { background: var(--wall); color: #f7f5ef; }
+    .exit-door-top {
+      position: relative;
+    }
+    .has-door-icon::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 25%;
+      width: 50%;
+      height: 100%;
+      background-image: var(--door-icon);
+      background-size: 100% 150%;
+      background-position: center 66.67%;
+      background-repeat: no-repeat;
+      z-index: 3;
+      pointer-events: none;
+      image-rendering: pixelated;
+    }
+    .has-door-icon-top::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 25%;
+      width: 50%;
+      height: 25%;
+      background-image: var(--door-icon);
+      background-size: 100% 100%;
+      background-position: center 0;
+      background-repeat: no-repeat;
+      z-index: 3;
+      pointer-events: none;
+      image-rendering: pixelated;
+    }
+    .cell.ruby::after,
+    .cell.sapphire::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      z-index: 3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+    .cell.ruby::after { background: var(--ruby); }
+    .cell.sapphire::after { background: var(--sapphire); }
+
+    .cell .terrain-icon,
+    .cell .actor-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    .terrain-icon {
+      width: 22px;
+      height: 22px;
+      opacity: 0.66;
+      color: rgba(32, 33, 36, 0.68);
+    }
+
+    .wall .terrain-icon {
+      color: #f7f5ef;
+      opacity: 0.9;
+    }
+
+    .actor-icon {
+      position: absolute;
+      inset: 5px;
+      z-index: 2;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      box-shadow: 0 8px 14px rgba(32, 33, 36, 0.24);
+      cursor: grab;
+    }
+
+    .actor-icon:active {
+      cursor: grabbing;
+    }
+
+    .actor-icon.fireboy { background: var(--fireboy); }
+    .actor-icon.watergirl { background: var(--watergirl); }
+
+    .actor-icon .icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(32, 33, 36, 0.18);
+    }
+
+    .control-panel {
+      min-height: 0;
+      padding: 14px;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      overflow: auto;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .segmented button,
+    .terrain-btn {
+      flex: 1 1 auto;
+    }
+
+    .segmented button[aria-pressed="true"],
+    .terrain-btn[aria-pressed="true"] {
+      border-color: var(--primary);
+      background: #dff3ec;
+      color: #0d5049;
+      box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.2);
+    }
+
+    .terrain-btn {
+      justify-content: flex-start;
+      min-width: 103px;
+    }
+
+    .terrain-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1px solid rgba(32, 33, 36, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      min-height: 70px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .stat-value {
+      margin-top: 3px;
+      font-size: 1.22rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .feedback {
+      min-height: 48px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      background: #eef7f4;
+      color: #15413d;
+      line-height: 1.5;
+      font-weight: 650;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+
+    .play-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .step-text {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      line-height: 1.45;
+      color: #343a40;
+      font-weight: 700;
+    }
+
+    .speed-control {
+      min-width: 180px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .hidden-symbols {
+      display: none;
+    }
+
+    @media (max-width: 1160px) {
+      :root {
+        --cell-size: 38px;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .control-panel {
+        max-height: none;
+        overflow: visible;
+      }
+    }
+
+    @media (max-width: 720px) {
+      :root {
+        --cell-size: 32px;
+      }
+
+      .app {
+        width: min(100vw - 18px, 1500px);
+        padding-top: 10px;
+      }
+
+      .topbar,
+      .timeline {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .status-pill,
+      .timeline {
+        width: 100%;
+      }
+
+      .map-panel,
+      .control-panel {
+        padding: 10px;
+      }
+
+      .timeline {
+        display: grid;
+      }
+
+      .play-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .speed-control {
+        min-width: 0;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .cell {
+        border-radius: 5px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg class="hidden-symbols" aria-hidden="true">
+    <symbol id="icon-route" viewBox="0 0 24 24">
+      <circle cx="6" cy="19" r="3"></circle><circle cx="18" cy="5" r="3"></circle><path d="M9 19h3a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h2"></path>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24">
+      <path d="M8 5v14l11-7z"></path>
+    </symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24">
+      <path d="M8 5v14"></path><path d="M16 5v14"></path>
+    </symbol>
+    <symbol id="icon-step" viewBox="0 0 24 24">
+      <path d="M5 5v14"></path><path d="m9 6 8 6-8 6V6z"></path>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24">
+      <path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path>
+    </symbol>
+    <symbol id="icon-grid" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
+    </symbol>
+    <symbol id="icon-monster" viewBox="0 0 24 24">
+      <path d="M5 15V9a7 7 0 0 1 14 0v6"></path><path d="M5 15c1.5-1 2.5-1 4 0s2.5 1 4 0 2.5-1 4 0 2.5 1 2 0v4H5z"></path><circle cx="9" cy="10" r="1"></circle><circle cx="15" cy="10" r="1"></circle><path d="M10 14h4"></path>
+    </symbol>
+    <symbol id="icon-player" viewBox="0 0 24 24">
+      <circle cx="12" cy="7" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path>
+    </symbol>
+    <symbol id="icon-wall" viewBox="0 0 24 24">
+      <path d="M3 8h18"></path><path d="M3 16h18"></path><path d="M8 8v8"></path><path d="M16 8v8"></path><rect x="3" y="4" width="18" height="16" rx="2"></rect>
+    </symbol>
+    <symbol id="icon-water" viewBox="0 0 24 24">
+      <path d="M3 9c2 2 4 2 6 0s4-2 6 0 4 2 6 0"></path><path d="M3 15c2 2 4 2 6 0s4-2 6 0 4 2 6 0"></path>
+    </symbol>
+    <symbol id="icon-lava" viewBox="0 0 24 24">
+      <path d="M12 3c1 4-3 5-1 9 1-2 3-3 4-5 3 5 2 11-3 14-5-2-8-8-3-14"></path>
+    </symbol>
+    <symbol id="icon-door" viewBox="0 0 24 24">
+      <path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"></path><path d="M10 12h.01"></path><path d="M4 21h16"></path>
+    </symbol>
+    <symbol id="icon-dot" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5"></circle>
+    </symbol>
+    <symbol id="icon-target" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path>
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon"><use href="#icon-route"></use></svg></div>
+        <h1>森林冰火人</h1>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <svg class="icon"><use href="#icon-target"></use></svg>
+        <span>火娃寻路准备</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="map-panel" aria-label="地图区域">
+        <div class="map-toolbar">
+          <div class="field">
+            <label>关卡</label>
+            <span style="font-weight: 700; padding: 0 12px;">第1关 (Forest Temple)</span>
+          </div>
+          <div class="toolbar-actions">
+            <button class="action-btn" id="clearBtn" type="button"><svg class="icon"><use href="#icon-refresh"></use></svg>清空</button>
+            <button class="action-btn" id="presetBtn" type="button"><svg class="icon"><use href="#icon-grid"></use></svg>示例地图</button>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="board" id="board" role="grid" aria-label="可编辑寻路地图"></div>
+        </div>
+
+        <div class="legend" aria-label="图例">
+          <span class="legend-item"><span class="swatch" style="background: var(--fireboy)"></span>火娃</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--watergirl)"></span>水娃</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--searched)"></span>已搜索</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--frontier)"></span>当前扩展</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--path)"></span>最终路径</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--mud)"></span>绿泥</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--wall)"></span>墙</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--gate)"></span>机关门</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--exit-fire)"></span>火门</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--exit-water)"></span>水门</span>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="算法控制面板">
+        <section class="section">
+          <div class="section-head">
+            <h2>算法</h2>
+            <span class="group-title" id="algorithmLabel">A*</span>
+          </div>
+          <div class="segmented" id="algorithmButtons" aria-labelledby="algorithmLabel">
+            <button type="button" data-algorithm="chase">直线追击</button>
+            <button type="button" data-algorithm="bfs">BFS</button>
+            <button type="button" data-algorithm="dijkstra">Dijkstra</button>
+            <button type="button" data-algorithm="astar" aria-pressed="true">A*</button>
+          </div>
+          <div class="field">
+            <label for="heuristicWeight">A* 方向感 <span id="weightValue">1.0</span></label>
+            <input id="heuristicWeight" type="range" min="0" max="3" step="0.1" value="1">
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>角色选择</h2>
+          </div>
+          <div class="field">
+            <label for="characterSelect">当前角色</label>
+            <select id="characterSelect">
+              <option value="fireboy" selected>火娃 (Fireboy) — 免疫岩浆，怕水</option>
+              <option value="watergirl">水娃 (Watergirl) — 免疫水，怕岩浆</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>地形画笔</h2>
+          </div>
+          <div class="terrain-tools" id="terrainTools"></div>
+        </section>
+
+<section class="section">
+          <div class="section-head">
+            <h2>结果</h2>
+          </div>
+          <div class="stats" id="stats"></div>
+          <div class="feedback" id="feedback">选择角色和算法后点击播放。火娃免疫岩浆，水娃免疫水，绿泥双方皆死。</div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="timeline" aria-label="时间轴">
+      <div class="play-controls">
+        <button class="icon-btn primary" id="runBtn" type="button"><svg class="icon"><use href="#icon-play"></use></svg>播放</button>
+        <button class="icon-btn" id="pauseBtn" type="button" disabled><svg class="icon"><use href="#icon-pause"></use></svg>暂停</button>
+        <button class="icon-btn" id="stepBtn" type="button"><svg class="icon"><use href="#icon-step"></use></svg>单步</button>
+        <button class="icon-btn danger" id="clearVizBtn" type="button"><svg class="icon"><use href="#icon-refresh"></use></svg>清除轨迹</button>
+      </div>
+      <div class="step-text" id="stepText">选择角色和算法，点击播放开始寻路。</div>
+      <div class="speed-control">
+        <label for="speedRange">速度</label>
+        <input id="speedRange" type="range" min="60" max="520" step="20" value="180">
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const IMG_BASE = ".";
+    const terrainDefs = {
+      plain:  { label: "平地",   icon: "icon-dot",   color: "var(--plain)",  passable: true },
+      water:  { label: "水池",   icon: "icon-water", color: "var(--water)",  passable: true,  fireboyDies: true, img: IMG_BASE + "/water.png" },
+      lava:   { label: "火浆池", icon: "icon-lava",  color: "var(--lava)",   passable: true,  watergirlDies: true, img: IMG_BASE + "/lava.png" },
+      mud:    { label: "绿泥池", icon: "icon-dot",   color: "var(--mud)",    passable: true,  bothDie: true, img: IMG_BASE + "/goo.png" },
+      gate:   { label: "机关门", icon: "icon-door",  color: "var(--gate)",   passable: false, img: IMG_BASE + "/gate.png" },
+      button: { label: "按钮",   icon: "icon-target",color: "var(--button)", passable: true, img: IMG_BASE + "/plate.png" },
+      exit_fire:  { label: "火娃出口", icon: "icon-door", color: "var(--exit-fire)",  passable: true, img: IMG_BASE + "/fire_door.png", doorFrame: true },
+      exit_water: { label: "水娃出口", icon: "icon-door", color: "var(--exit-water)", passable: true, img: IMG_BASE + "/water_door.png", doorFrame: true },
+      wall:   { label: "墙",     icon: "icon-wall",  color: "var(--wall)",   passable: false },
+      ruby:    { label: "红宝石", icon: "icon-dot",   color: "var(--ruby)",    passable: true, collectible: true },
+      sapphire:{ label: "蓝宝石", icon: "icon-dot",   color: "var(--sapphire)",passable: true, collectible: true },
+    };
+
+    const collectibleDefs = {
+      ruby:    { label: "红宝石", color: "var(--ruby)",    collector: "fireboy" },
+      sapphire:{ label: "蓝宝石", color: "var(--sapphire)",collector: "watergirl" }
+    };
+
+    const mechanismDefs = {
+      button: { type: "hold", label: "按钮", note: "踩住触发，松开复原" },
+    };
+
+    const characterDefs = {
+      fireboy: {
+        label: "火娃",
+        icon: "icon-monster",
+        img: IMG_BASE + "/magmaboy.png",
+        immune: ["lava"],
+        weakness: ["water", "mud"],
+        costs: { plain: 1, water: Infinity, lava: 1, mud: Infinity, gate: Infinity, button: 1, exit_fire: 1, exit_water: 1, wall: Infinity }
+      },
+      watergirl: {
+        label: "水娃",
+        icon: "icon-player",
+        img: IMG_BASE + "/hydrogirl.png",
+        immune: ["water"],
+        weakness: ["lava", "mud"],
+        costs: { plain: 1, water: 1, lava: Infinity, mud: Infinity, gate: Infinity, button: 1, exit_fire: 1, exit_water: 1, wall: Infinity }
+      }
+    };
+
+    const terrainOrder = ["plain", "water", "lava", "mud", "gate", "button", "exit_fire", "exit_water", "ruby", "sapphire"];
+    const movableTerrain = ["water", "lava", "mud", "gate", "button"];
+    const presets = ["lavaShortcut", "waterMaze", "mudChallenge", "coopDoor"];
+
+    const _W = "wall", _A = "air", _M = "mud", _T = "water", _L = "lava", _EF = "exit_fire", _EW = "exit_water";
+    const LEVEL_MAP = [
+      [_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_EF,_A,_EW,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_M,_M,_M,_W,_W,_W,_W,_W,_A,_A,_A,_W],
+      [_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_W,_W,_W,_W,_W,_W,_W,_M,_M,_M,_M,_W,_W,_W,_W,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_W,_W,_W,_W,_W,_T,_T,_T,_W,_W,_L,_L,_L,_W,_W,_W,_W,_W,_A,_A,_A,_W],
+      [_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W],
+      [_W,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_A,_W,_W,_W],
+      [_W,_W,_W,_W,_W,_W,_W,_W,_T,_T,_T,_W,_W,_W,_L,_L,_L,_W,_W,_W,_W,_W,_W],
+      [_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W,_W],
+    ];
+    // LEVEL_MAP strings: air=plain, mud=mud, water=water, lava=lava, wall=wall
+    function buildGridFromLevel() {
+      const h = LEVEL_MAP.length;
+      const w = LEVEL_MAP[0].length;
+      const grid = [];
+      const baseGrid = [];
+      for (let y = 0; y < h; y++) {
+        const row = [];
+        const baseRow = [];
+        for (let x = 0; x < w; x++) {
+          const tile = LEVEL_MAP[y][x];
+          if (tile === "air" || tile === "plain") {
+            row.push("plain");
+            baseRow.push("plain");
+          } else if (tile === "mud") {
+            row.push("mud");
+            baseRow.push("wall");
+          } else if (tile === "water") {
+            row.push("water");
+            baseRow.push("wall");
+          } else if (tile === "lava") {
+            row.push("lava");
+            baseRow.push("wall");
+          } else if (tile === "exit_fire") {
+            row.push("exit_fire");
+            baseRow.push("plain");
+          } else if (tile === "exit_water") {
+            row.push("exit_water");
+            baseRow.push("plain");
+          } else {
+            row.push("wall");
+            baseRow.push("wall");
+          }
+        }
+        grid.push(row);
+        baseGrid.push(baseRow);
+      }
+      return { grid, baseGrid, width: w, height: h };
+    }
+    const builtLevel = buildGridFromLevel();
+
+    const state = {
+      width: builtLevel.width,
+      height: builtLevel.height,
+      grid: builtLevel.grid,
+      originalGrid: builtLevel.baseGrid.map(row => [...row]),
+      fireboy: { x: 1, y: 4 },
+      watergirl: { x: 2, y: 4 },
+      algorithm: "astar",
+      brush: "wall",
+      activeCharacter: "fireboy",
+      costs: characterDefs.fireboy.costs,
+      dragging: null,
+      painting: false,
+      isAnimating: false,
+      timer: null,
+      animation: null,
+      presetIndex: 0,
+      viz: {
+        searched: new Set(),
+        frontier: new Set(),
+        path: new Set(),
+        searched2: new Set(),
+        path2: new Set(),
+        stuck: null
+      },
+      result: null,
+      result2: null,
+      mechanisms: {},
+      collectibles: new Map(),
+      collected: { ruby: 0, sapphire: 0 },
+      targets: { fireboy: null, watergirl: null }
+    };
+
+    const board = document.getElementById("board");
+    const terrainTools = document.getElementById("terrainTools");
+    const characterSelect = document.getElementById("characterSelect");
+    const algorithmButtons = document.getElementById("algorithmButtons");
+    const heuristicWeight = document.getElementById("heuristicWeight");
+    const weightValue = document.getElementById("weightValue");
+    const stats = document.getElementById("stats");
+    const feedback = document.getElementById("feedback");
+    const stepText = document.getElementById("stepText");
+    const statusPill = document.getElementById("statusPill").querySelector("span");
+    const runBtn = document.getElementById("runBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const clearVizBtn = document.getElementById("clearVizBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const presetBtn = document.getElementById("presetBtn");
+    const speedRange = document.getElementById("speedRange");
+
+    function keyOf(x, y) {
+      return `${x},${y}`;
+    }
+
+    function parseKey(key) {
+      const [x, y] = key.split(",").map(Number);
+      return { x, y };
+    }
+
+    function inBounds(x, y) {
+      return x >= 0 && y >= 0 && x < state.width && y < state.height;
+    }
+
+    function isActor(x, y) {
+      if (state.fireboy.x === x && state.fireboy.y === y) return "fireboy";
+      if (state.watergirl.x === x && state.watergirl.y === y) return "watergirl";
+      return null;
+    }
+
+    function otherCharacter(ch) {
+      return ch === "fireboy" ? "watergirl" : "fireboy";
+    }
+
+    function isGateOpen(key) {
+      return state.mechanisms[key] === true;
+    }
+
+    function isPassable(x, y, character) {
+      if (!inBounds(x, y)) return false;
+      const terrain = state.grid[y][x];
+      const def = terrainDefs[terrain];
+      if (!def || !def.passable) {
+        if (terrain === "gate" && isGateOpen(keyOf(x, y))) return true;
+        return false;
+      }
+      if (!character) return true;
+      const cd = characterDefs[character];
+      if (def.fireboyDies && character === "fireboy") return false;
+      if (def.watergirlDies && character === "watergirl") return false;
+      if (def.bothDie) return false;
+      return true;
+    }
+
+    function terrainCost(terrain, x, y, character) {
+      const cd = characterDefs[character];
+      if (!cd) return terrain === "wall" ? Infinity : 1;
+      if (terrain === "gate" && isGateOpen(keyOf(x, y))) return 1;
+      return cd.costs[terrain] ?? Infinity;
+    }
+
+    function movementCost(x, y, character) {
+      return terrainCost(state.grid[y][x], x, y, character);
+    }
+
+    function neighbors(node, character) {
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+      ];
+      return dirs
+        .map((d) => ({ x: node.x + d.x, y: node.y + d.y }))
+        .filter((p) => isPassable(p.x, p.y, character));
+    }
+
+    function heuristic(a, b, character) {
+      const costs = characterDefs[character].costs;
+      const minCost = Math.max(0.2, Math.min(...movableTerrain.map((t) => Number(costs[t] === Infinity ? 999 : (costs[t] || 1)))));
+      return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y)) * minCost;
+    }
+
+    function createGrid(width, height, fill = "plain") {
+      return Array.from({ length: height }, () => Array.from({ length: width }, () => fill));
+    }
+
+    function resetGrid() {
+      const level = buildGridFromLevel();
+      state.width = level.width;
+      state.height = level.height;
+      state.grid = level.grid;
+      state.originalGrid = level.baseGrid.map(row => [...row]);
+      state.fireboy = { x: 1, y: 4 };
+      state.watergirl = { x: 2, y: 4 };
+      state.collectibles = new Map();
+      state.collected = { ruby: 0, sapphire: 0 };
+      state.mechanisms = {};
+      state.targets = { fireboy: null, watergirl: null };
+      stopAnimation();
+      state.viz.searched.clear();
+      state.viz.frontier.clear();
+      state.viz.path.clear();
+      state.viz.searched2.clear();
+      state.viz.path2.clear();
+      state.viz.stuck = null;
+      state.animation = null;
+      state.result = null;
+      state.result2 = null;
+      statusPill.textContent = "准备运行";
+      stepText.textContent = "等待开始。";
+      renderTerrainTools();
+      renderAlgorithmButtons();
+      renderBoard();
+      renderStats();
+    }
+
+    function iconSvg(id, className = "icon") {
+      return `<svg class="${className}" aria-hidden="true"><use href="#${id}"></use></svg>`;
+    }
+
+    function renderBoard() {
+      board.style.gridTemplateColumns = `repeat(${state.width}, var(--cell-size))`;
+      board.innerHTML = "";
+
+      const exitDoors = [];
+
+      for (let y = 0; y < state.height; y += 1) {
+        for (let x = 0; x < state.width; x += 1) {
+          const terrain = state.grid[y][x];
+          const key = keyOf(x, y);
+          const actor = isActor(x, y);
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = `cell ${terrain === "button" ? "plain" : terrain}`;
+          cell.dataset.x = String(x);
+          cell.dataset.y = String(y);
+          cell.setAttribute("role", "gridcell");
+          const actorLabel = actor === "fireboy" ? "火娃" : actor === "watergirl" ? "水娃" : "";
+          cell.setAttribute("aria-label", `${x + 1}列${y + 1}行，${terrainDefs[terrain] ? terrainDefs[terrain].label : terrain}${actorLabel ? "，" + actorLabel : ""}`);
+
+          if (state.viz.searched.has(key)) cell.classList.add("searched");
+          if (state.viz.frontier.has(key)) cell.classList.add("frontier");
+          if (state.viz.path.has(key)) cell.classList.add("path");
+          if (state.viz.searched2.has(key)) cell.classList.add("searched");
+          if (state.viz.path2.has(key)) cell.classList.add("path");
+          if (state.viz.stuck === key) cell.classList.add("stuck");
+
+          if (state.collectibles.has(key)) {
+            cell.classList.add(state.collectibles.get(key));
+          }
+
+          const def = terrainDefs[terrain];
+          if (def && def.img && terrain !== "wall" && terrain !== "plain") {
+            if (def.doorFrame) {
+              // exit_fire / exit_water: door_frame stretched 2x over two cells, door icon centered between them
+              if (terrain === "exit_fire" || terrain === "exit_water") {
+                exitDoors.push({ x, y, img: def.img });
+              } else {
+                cell.style.backgroundImage = `url('${IMG_BASE}/door_frame.png'), url('${def.img}')`;
+                cell.style.backgroundSize = "cover, 70%";
+                cell.style.backgroundPosition = "center bottom, center 60%";
+                cell.style.backgroundRepeat = "no-repeat, no-repeat";
+              }
+            } else if (terrain === "button") {
+              cell.style.backgroundImage = `url('${def.img}')`;
+              cell.style.backgroundSize = "100% 33.33%";
+              cell.style.backgroundPosition = "center bottom";
+              cell.style.backgroundRepeat = "no-repeat";
+            } else {
+              cell.style.backgroundImage = `url('${def.img}')`;
+              cell.style.backgroundSize = "cover";
+              cell.style.backgroundPosition = "center";
+            }
+            cell.style.imageRendering = "pixelated";
+          }
+
+          if (actor) {
+            const actorEl = document.createElement("span");
+            actorEl.className = `actor-icon ${actor}`;
+            const chDef = characterDefs[actor];
+            if (chDef && chDef.img) {
+              actorEl.style.backgroundImage = `url('${chDef.img}')`;
+              actorEl.style.backgroundSize = "contain";
+              actorEl.style.backgroundPosition = "center";
+              actorEl.style.backgroundRepeat = "no-repeat";
+              actorEl.style.imageRendering = "pixelated";
+              actorEl.style.backgroundColor = "transparent";
+            } else {
+              actorEl.innerHTML = iconSvg(actor === "fireboy" ? "icon-monster" : "icon-player");
+            }
+            cell.appendChild(actorEl);
+          }
+
+          board.appendChild(cell);
+        }
+      }
+
+      // Second pass: two-cell-high door frame + door icons
+      for (const door of exitDoors) {
+        const ty = door.y - 1;
+        if (ty >= 0) {
+          const topIdx = ty * state.width + door.x;
+          const topCell = board.children[topIdx];
+          if (topCell) {
+            topCell.style.backgroundImage = `url('${IMG_BASE}/door_frame.png')`;
+            topCell.style.backgroundSize = "auto 200%";
+            topCell.style.backgroundPosition = "center top";
+            topCell.style.backgroundRepeat = "no-repeat";
+            topCell.style.imageRendering = "pixelated";
+            // Door icon in top cell: bottom 25%
+            topCell.style.setProperty('--door-icon', `url('${door.img}')`);
+            topCell.classList.add('has-door-icon-top');
+          }
+        }
+        const bottomIdx = door.y * state.width + door.x;
+        const bottomCell = board.children[bottomIdx];
+        if (bottomCell) {
+          bottomCell.style.backgroundImage = `url('${IMG_BASE}/door_frame.png')`;
+          bottomCell.style.backgroundSize = "auto 200%";
+          bottomCell.style.backgroundPosition = "center bottom";
+          bottomCell.style.backgroundRepeat = "no-repeat";
+          bottomCell.style.imageRendering = "pixelated";
+          // Door icon in ::after pseudo-element
+          bottomCell.style.setProperty('--door-icon', `url('${door.img}')`);
+          bottomCell.classList.add('has-door-icon');
+        }
+      }
+    }
+
+    function renderTerrainTools() {
+      terrainTools.innerHTML = "";
+      terrainOrder.forEach((terrain) => {
+        const def = terrainDefs[terrain];
+        if (!def) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "terrain-btn";
+        btn.dataset.terrain = terrain;
+        btn.setAttribute("aria-pressed", String(state.brush === terrain));
+        btn.innerHTML = `<span class="terrain-dot" style="background: ${def.color}"></span>${def.label}`;
+        terrainTools.appendChild(btn);
+      });
+    }
+
+    function renderAlgorithmButtons() {
+      algorithmButtons.querySelectorAll("button").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.algorithm === state.algorithm));
+      });
+    }
+
+    function renderStats() {
+      const result = state.result;
+      const result2 = state.result2;
+      const items = [
+        ["算法", algorithmName(state.algorithm)],
+        ["角色", characterDefs[state.activeCharacter].label],
+        ["火娃搜索", result ? result.searchedCount : "0"],
+        ["水娃搜索", result2 ? result2.searchedCount : "0"],
+        ["路径总成本", result?.found ? prettyNumber(result.cost) + (result2?.found ? " / " + prettyNumber(result2.cost) : "") : "0"],
+        ["收集红宝石", state.collected.ruby],
+        ["收集蓝宝石", state.collected.sapphire],
+        ["是否找到", result?.found && result2?.found ? "双方到达" : result?.found ? "仅火娃" : result2?.found ? "仅水娃" : result ? "否" : "未运行"]
+      ];
+
+      stats.innerHTML = items.map(([label, value]) => `
+        <div class="stat">
+          <div class="stat-label">${label}</div>
+          <div class="stat-value">${value}</div>
+        </div>
+      `).join("");
+
+      feedback.textContent = result ? result.feedback : "选择算法后点击播放。";
+    }
+
+    function renderAll() {
+      renderTerrainTools();
+      renderAlgorithmButtons();
+      renderBoard();
+      renderStats();
+      weightValue.textContent = Number(heuristicWeight.value).toFixed(1);
+    }
+
+    function algorithmName(id) {
+      return {
+        chase: "直线追击",
+        bfs: "BFS",
+        dijkstra: "Dijkstra",
+        astar: "A*",
+        coop: "双人协作"
+      }[id] || id;
+    }
+
+    function prettyNumber(value) {
+      if (!Number.isFinite(value)) return "∞";
+      return Math.round(value * 10) / 10;
+    }
+
+    function optimalText(result) {
+      if (!result.optimalCost || !Number.isFinite(result.optimalCost)) return "未知";
+      const diff = result.cost - result.optimalCost;
+      if (Math.abs(diff) < 0.001) return "是";
+      if (diff <= Math.max(2, result.optimalCost * 0.12)) return "接近";
+      return "否";
+    }
+
+    function reconstruct(parent, endKey) {
+      const path = [];
+      let current = endKey;
+      while (current) {
+        path.push(parseKey(current));
+        current = parent.get(current);
+      }
+      return path.reverse();
+    }
+
+    function computePathCost(path, character) {
+      if (!path || path.length < 2) return 0;
+      return path.slice(1).reduce((sum, p) => sum + movementCost(p.x, p.y, character), 0);
+    }
+
+    function getStart(character) {
+      return { ...state[character] };
+    }
+
+    function getTarget(character) {
+      if (state.targets[character]) return state.targets[character];
+      const other = otherCharacter(character);
+      return { ...state[other] };
+    }
+
+    function collectGemsAlong(path, character) {
+      const cd = collectibleDefs;
+      path.forEach((p) => {
+        const key = keyOf(p.x, p.y);
+        if (state.collectibles.has(key)) {
+          const gem = state.collectibles.get(key);
+          if (cd[gem] && cd[gem].collector === character) {
+            state.collected[gem] += 1;
+            state.collectibles.delete(key);
+          }
+        }
+      });
+    }
+
+    function runChase(start, target, character) {
+      const steps = [];
+      const path = [{ ...start }];
+      const visited = new Set([keyOf(start.x, start.y)]);
+      let current = { ...start };
+      let stuck = null;
+
+      for (let i = 0; i < state.width * state.height; i += 1) {
+        if (current.x === target.x && current.y === target.y) break;
+
+        const dx = target.x - current.x;
+        const dy = target.y - current.y;
+        const primary = Math.abs(dx) >= Math.abs(dy)
+          ? { x: Math.sign(dx), y: 0 }
+          : { x: 0, y: Math.sign(dy) };
+        const next = { x: current.x + primary.x, y: current.y + primary.y };
+
+        if (!isPassable(next.x, next.y, character)) {
+          stuck = keyOf(current.x, current.y);
+          steps.push({ current: [current], text: `${characterDefs[character].label}直线追击撞到障碍，停止移动。` });
+          break;
+        }
+
+        current = next;
+        path.push({ ...current });
+        visited.add(keyOf(current.x, current.y));
+        steps.push({ current: [current], text: `${characterDefs[character].label}追击移动到第 ${current.x + 1} 列，第 ${current.y + 1} 行。` });
+      }
+
+      const found = current.x === target.x && current.y === target.y;
+      return finalizeResult({
+        found,
+        path: found ? path : [],
+        previewPath: path,
+        searchedCount: visited.size,
+        steps,
+        distances: new Map(),
+        stuck
+      }, character);
+    }
+
+    function runBfs(start, target, character) {
+      const startKey = keyOf(start.x, start.y);
+      const targetKey = keyOf(target.x, target.y);
+      const queue = [{ ...start }];
+      const visited = new Set([startKey]);
+      const parent = new Map();
+      const distances = new Map([[startKey, 0]]);
+      const steps = [];
+      let found = false;
+
+      while (queue.length) {
+        const layerSize = queue.length;
+        const currentLayer = [];
+        for (let i = 0; i < layerSize; i += 1) {
+          const current = queue.shift();
+          const currentKey = keyOf(current.x, current.y);
+          currentLayer.push(current);
+          if (currentKey === targetKey) {
+            found = true;
+            break;
+          }
+
+          neighbors(current, character).forEach((next) => {
+            const nextKey = keyOf(next.x, next.y);
+            if (!visited.has(nextKey)) {
+              visited.add(nextKey);
+              parent.set(nextKey, currentKey);
+              distances.set(nextKey, distances.get(currentKey) + 1);
+              queue.push(next);
+            }
+          });
+        }
+
+        steps.push({ current: currentLayer, text: `BFS 正在为${characterDefs[character].label}扩展第 ${steps.length + 1} 层。` });
+        if (found) break;
+      }
+
+      const path = found ? reconstruct(parent, targetKey) : [];
+      return finalizeResult({
+        found,
+        path,
+        searchedCount: visited.size,
+        steps,
+        distances
+      }, character);
+    }
+
+    function runDijkstra(start, target, character) {
+      return runWeighted("dijkstra", 0, start, target, character);
+    }
+
+    function runAstar(start, target, character) {
+      return runWeighted("astar", Number(heuristicWeight.value), start, target, character);
+    }
+
+    function runWeighted(kind, weight, start, target, character) {
+      const startKey = keyOf(start.x, start.y);
+      const targetKey = keyOf(target.x, target.y);
+      const open = [{ ...start, g: 0, f: 0 }];
+      const closed = new Set();
+      const parent = new Map();
+      const distances = new Map([[startKey, 0]]);
+      const steps = [];
+      let found = false;
+
+      while (open.length) {
+        open.sort((a, b) => a.f - b.f || a.g - b.g);
+        const current = open.shift();
+        const currentKey = keyOf(current.x, current.y);
+        if (closed.has(currentKey)) continue;
+        closed.add(currentKey);
+
+        const chLabel = characterDefs[character].label;
+        const text = kind === "astar"
+          ? `A* 为${chLabel}扩展累计成本 ${prettyNumber(current.g)} 的格子。`
+          : `Dijkstra 为${chLabel}扩展当前最低累计成本 ${prettyNumber(current.g)} 的格子。`;
+        steps.push({ current: [current], text });
+
+        if (currentKey === targetKey) {
+          found = true;
+          break;
+        }
+
+        neighbors(current, character).forEach((next) => {
+          const nextKey = keyOf(next.x, next.y);
+          if (closed.has(nextKey)) return;
+          const newCost = current.g + movementCost(next.x, next.y, character);
+          if (newCost < (distances.get(nextKey) ?? Infinity)) {
+            distances.set(nextKey, newCost);
+            parent.set(nextKey, currentKey);
+            const h = heuristic(next, target, character);
+            open.push({ ...next, g: newCost, f: newCost + weight * h });
+          }
+        });
+      }
+
+      const path = found ? reconstruct(parent, targetKey) : [];
+      return finalizeResult({
+        found,
+        path,
+        searchedCount: closed.size,
+        steps,
+        distances
+      }, character);
+    }
+
+    function computeOptimalCost(start, target, character) {
+      const startKey = keyOf(start.x, start.y);
+      const targetKey = keyOf(target.x, target.y);
+      const open = [{ ...start, g: 0 }];
+      const closed = new Set();
+      const dist = new Map([[startKey, 0]]);
+
+      while (open.length) {
+        open.sort((a, b) => a.g - b.g);
+        const current = open.shift();
+        const currentKey = keyOf(current.x, current.y);
+        if (closed.has(currentKey)) continue;
+        closed.add(currentKey);
+        if (currentKey === targetKey) return current.g;
+
+        neighbors(current, character).forEach((next) => {
+          const nextKey = keyOf(next.x, next.y);
+          const newCost = current.g + movementCost(next.x, next.y, character);
+          if (newCost < (dist.get(nextKey) ?? Infinity)) {
+            dist.set(nextKey, newCost);
+            open.push({ ...next, g: newCost });
+          }
+        });
+      }
+
+      return Infinity;
+    }
+
+    function finalizeResult(partial, character) {
+      const visiblePath = partial.found ? partial.path : (partial.previewPath || []);
+      const cost = partial.found ? computePathCost(partial.path, character) : 0;
+      const optimalCost = partial.found ? computeOptimalCost(getStart(character), getTarget(character), character) : Infinity;
+      const deviation = partial.found && Number.isFinite(optimalCost) ? Math.max(0, cost - optimalCost) : 40;
+      const score = partial.found ? Math.max(0, Math.round(100 - partial.searchedCount * 0.5 - deviation * 2)) : 0;
+      if (partial.found) collectGemsAlong(partial.path, character);
+      const result = {
+        ...partial,
+        path: visiblePath,
+        cost,
+        optimalCost,
+        score,
+        character,
+        feedback: makeFeedback(partial, cost, optimalCost, score, character)
+      };
+      return result;
+    }
+
+    function makeFeedback(result, cost, optimalCost, score, character) {
+      const chLabel = characterDefs[character].label;
+      if (!result.found) {
+        if (state.algorithm === "chase") return `${chLabel}直线追击失败：它知道目标方向，但不知道绕路。`;
+        return `${chLabel}没有找到目标：检查墙体或地形免疫设置。`;
+      }
+
+      if (state.algorithm === "chase") return `${chLabel}直线追击成功，但它只适合没有障碍的地图。`;
+      if (state.algorithm === "bfs") return `${chLabel} BFS 找到最短步数路径；遇到高成本地形时，路径成本可能并不理想。`;
+      if (state.algorithm === "dijkstra") return `${chLabel} Dijkstra 找到最优成本路径，成本 ${prettyNumber(cost)}。`;
+
+      const search = result.searchedCount;
+      const closeToOptimal = Math.abs(cost - optimalCost) <= Math.max(2, optimalCost * 0.12);
+      if (score >= 80 && closeToOptimal) return `${chLabel} A* 很合适：搜索范围更集中，路径成本仍然接近最优。`;
+      if (!closeToOptimal) return `${chLabel} 方向感太强：搜索减少了，但路线绕进了高成本区域。`;
+      if (search > state.width * state.height * 0.45) return `${chLabel} 方向感偏弱：路径质量稳定，但搜索效率不高。`;
+      return `${chLabel} A* 找到了可用路线，可以继续微调方向感权重。`;
+    }
+
+    function buildAnimation() {
+      clearTimeout(state.timer);
+      state.viz.searched.clear();
+      state.viz.frontier.clear();
+      state.viz.path.clear();
+      state.viz.searched2.clear();
+      state.viz.path2.clear();
+      state.viz.stuck = null;
+
+      const character = state.activeCharacter;
+      const start = getStart(character);
+      const target = getTarget(character);
+      let result;
+
+      if (state.algorithm === "chase") result = runChase(start, target, character);
+      if (state.algorithm === "bfs") result = runBfs(start, target, character);
+      if (state.algorithm === "dijkstra") result = runDijkstra(start, target, character);
+      if (state.algorithm === "astar") result = runAstar(start, target, character);
+
+      state.result = result;
+      state.animation = {
+        index: 0,
+        steps: result.steps,
+        result,
+        character
+      };
+      renderStats();
+      renderBoard();
+      return state.animation;
+    }
+
+    function applyStep() {
+      const animation = state.animation || buildAnimation();
+      if (!animation || animation.index >= animation.steps.length) {
+        finishAnimation();
+        return false;
+      }
+
+      state.viz.frontier.clear();
+      const step = animation.steps[animation.index];
+      step.current.forEach((p) => {
+        const k = keyOf(p.x, p.y);
+        state.viz.searched.add(k);
+        state.viz.frontier.add(k);
+      });
+      stepText.textContent = step.text;
+      statusPill.textContent = `${characterDefs[state.activeCharacter].label} · ${animation.index + 1} / ${animation.steps.length}`;
+      animation.index += 1;
+      renderBoard();
+      return true;
+    }
+
+    function finishAnimation() {
+      stopAnimation();
+      const result = state.result;
+      if (!result) return;
+      state.viz.frontier.clear();
+      state.viz.path.clear();
+      result.path.forEach((p) => state.viz.path.add(keyOf(p.x, p.y)));
+      state.viz.stuck = result.stuck || null;
+      const chLabel = characterDefs[state.activeCharacter].label;
+      statusPill.textContent = result.found ? `${chLabel}已找到目标` : `${chLabel}未找到目标`;
+      stepText.textContent = result.found ? "路径已生成。" : "搜索结束。";
+      renderBoard();
+      renderStats();
+    }
+
+    function playAnimation() {
+      if (state.isAnimating) return;
+      if (!state.animation || state.animation.index >= state.animation.steps.length) buildAnimation();
+      state.isAnimating = true;
+      runBtn.disabled = true;
+      pauseBtn.disabled = false;
+      const tick = () => {
+        if (!state.isAnimating) return;
+        const hasMore = applyStep();
+        if (hasMore) {
+          const delay = Number(speedRange.max) + Number(speedRange.min) - Number(speedRange.value);
+          state.timer = setTimeout(tick, delay);
+        } else {
+          finishAnimation();
+        }
+      };
+      tick();
+    }
+
+    function stopAnimation() {
+      state.isAnimating = false;
+      clearTimeout(state.timer);
+      runBtn.disabled = false;
+      pauseBtn.disabled = true;
+    }
+
+    // Allowed terrain editing rules:
+    // - In walls: can add/remove water, lava, mud, button
+    // - In air (plain): can add/remove gate, button
+    // - Everything else is forbidden
+    const wallEditTerrains = new Set(["water", "lava", "mud", "button"]);
+    const airEditTerrains = new Set(["gate", "button", "ruby", "sapphire"]);
+
+    function setGateDoubleHeight(x, y) {
+      // If already a gate, remove it
+      if (state.grid[y][x] === "gate") {
+        const orig = state.originalGrid[y][x];
+        state.grid[y][x] = orig;
+        delete state.mechanisms[keyOf(x, y)];
+        state.collectibles.delete(keyOf(x, y));
+        // Also try to remove paired gate
+        if (y > 0 && state.grid[y - 1][x] === "gate") {
+          state.grid[y - 1][x] = state.originalGrid[y - 1][x];
+          delete state.mechanisms[keyOf(x, y - 1)];
+          state.collectibles.delete(keyOf(x, y - 1));
+        }
+        if (y < state.height - 1 && state.grid[y + 1][x] === "gate") {
+          state.grid[y + 1][x] = state.originalGrid[y + 1][x];
+          delete state.mechanisms[keyOf(x, y + 1)];
+          state.collectibles.delete(keyOf(x, y + 1));
+        }
+        clearVisualizationSoft();
+        renderBoard();
+        return;
+      }
+
+      const orig = state.originalGrid[y][x];
+      if (orig !== "plain" && orig !== "air") {
+        feedback.textContent = "不允许操作：只能在空气格子中放置机关门。";
+        return;
+      }
+
+      // 规则1: 点击位置下方(n+1)是墙 → 点击位置(n)及上方(n-1)变门
+      if (y > 0 && y < state.height - 1 && state.grid[y + 1][x] === "wall") {
+        const upOrig = state.originalGrid[y - 1][x];
+        const upCurr = state.grid[y - 1][x];
+        if ((upOrig === "plain" || upOrig === "air") && !isActor(x, y - 1) && upCurr !== "gate") {
+          state.grid[y][x] = "gate";
+          state.grid[y - 1][x] = "gate";
+          state.mechanisms[keyOf(x, y)] = false;
+          state.mechanisms[keyOf(x, y - 1)] = false;
+          state.collectibles.delete(keyOf(x, y));
+          state.collectibles.delete(keyOf(x, y - 1));
+          clearVisualizationSoft();
+          renderBoard();
+          feedback.textContent = "机关门已放置（下方墙 → 点击格+上方格）。";
+          return;
+        }
+      }
+
+      // 规则2: 点击位置的下下方(n+2)是墙 → 点击位置(n)及下方(n+1)变门
+      if (y < state.height - 2 && state.grid[y + 2][x] === "wall") {
+        const downOrig = state.originalGrid[y + 1][x];
+        const downCurr = state.grid[y + 1][x];
+        if ((downOrig === "plain" || downOrig === "air") && !isActor(x, y + 1) && downCurr !== "gate") {
+          state.grid[y][x] = "gate";
+          state.grid[y + 1][x] = "gate";
+          state.mechanisms[keyOf(x, y)] = false;
+          state.mechanisms[keyOf(x, y + 1)] = false;
+          state.collectibles.delete(keyOf(x, y));
+          state.collectibles.delete(keyOf(x, y + 1));
+          clearVisualizationSoft();
+          renderBoard();
+          feedback.textContent = "机关门已放置（下下方墙 → 点击格+下方格）。";
+          return;
+        }
+      }
+
+      feedback.textContent = "无法创建机关门：不满足放置条件。";
+    }
+
+    function setTerrain(x, y, terrain, painting) {
+      if (isActor(x, y)) return;
+
+      // Gate → special double-height logic
+      if (terrain === "gate") {
+        return setGateDoubleHeight(x, y);
+      }
+
+      // Painting: skip if already the target terrain (prevents flicker/erase)
+      if (painting && state.grid[y][x] === terrain) return;
+
+      const base = state.originalGrid[y][x];   // "wall" or "plain"/"air" — never changes
+      const current = state.grid[y][x];
+      const mechKey = keyOf(x, y);
+
+      // --- Toggle off ---
+      const isWallTerr = terrain === "water" || terrain === "lava" || terrain === "mud";
+      const isAirTerr = terrain === "button" || terrain === "ruby" || terrain === "sapphire";
+
+      // If current cell has a wall-terrain (water/lava/mud) and brush is also a wall-terrain → remove it
+      const currentIsWallTerr = current === "water" || current === "lava" || current === "mud";
+      const currentIsAirTerr = current === "button" || current === "ruby" || current === "sapphire";
+
+      if (isWallTerr && currentIsWallTerr) {
+        state.grid[y][x] = base;
+        endPointerInteraction();
+        clearVisualizationSoft();
+        renderBoard();
+        return;
+      }
+      if (isAirTerr && currentIsAirTerr) {
+        state.grid[y][x] = base;
+        if (current === "button") delete state.mechanisms[mechKey];
+        state.collectibles.delete(mechKey);
+        endPointerInteraction();
+        clearVisualizationSoft();
+        renderBoard();
+        return;
+      }
+
+      // --- Placement rules ---
+      if (isWallTerr) {
+        // Water/lava/mud can only be placed on wall base
+        if (base !== "wall") {
+          feedback.textContent = "水池、火浆池、绿泥池只能在墙壁上放置。";
+          return;
+        }
+        state.grid[y][x] = terrain;
+      } else if (isAirTerr) {
+        // Button/gems can only be placed on air base
+        if (base !== "plain" && base !== "air") {
+          feedback.textContent = terrain === "button" ? "按钮只能在空气格子中放置。" : "宝石只能在空气格子中放置。";
+          return;
+        }
+        // Button extra rule: below must be wall
+        if (terrain === "button" && (y >= state.height - 1 || state.grid[y + 1][x] !== "wall")) {
+          feedback.textContent = "按钮下方必须是墙壁。";
+          return;
+        }
+        // Clear any existing mechanism/gem on this cell
+        if (current === "gate" || current === "button") delete state.mechanisms[mechKey];
+        state.collectibles.delete(mechKey);
+        if (terrain === "ruby" || terrain === "sapphire") {
+          state.collectibles.set(mechKey, terrain);
+        } else {
+          state.grid[y][x] = terrain;
+          state.mechanisms[mechKey] = false;
+        }
+      }
+
+      clearVisualizationSoft();
+      if (painting && state._paintTimer) {
+        cancelAnimationFrame(state._paintTimer);
+      }
+      if (painting) {
+        state._paintTimer = requestAnimationFrame(() => {
+          state._paintTimer = null;
+          renderBoard();
+        });
+      } else {
+        renderBoard();
+      }
+    }
+
+    function clearVisualization() {
+      stopAnimation();
+      state.viz.searched.clear();
+      state.viz.frontier.clear();
+      state.viz.path.clear();
+      state.viz.searched2.clear();
+      state.viz.path2.clear();
+      state.viz.stuck = null;
+      state.animation = null;
+      state.result = null;
+      state.result2 = null;
+      statusPill.textContent = "准备运行";
+      stepText.textContent = "等待开始。";
+      renderBoard();
+      renderStats();
+    }
+
+    function clearVisualizationSoft() {
+      stopAnimation();
+      state.viz.searched.clear();
+      state.viz.frontier.clear();
+      state.viz.path.clear();
+      state.viz.searched2.clear();
+      state.viz.path2.clear();
+      state.viz.stuck = null;
+      state.animation = null;
+      state.result = null;
+      state.result2 = null;
+      statusPill.textContent = "准备运行";
+      stepText.textContent = "等待开始。";
+      renderStats();
+    }
+
+    function cellFromEvent(event) {
+      const cell = event.target.closest(".cell");
+      if (!cell) return null;
+      return { cell, x: Number(cell.dataset.x), y: Number(cell.dataset.y) };
+    }
+
+    function cellFromPoint(event) {
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const cell = element?.closest?.(".cell");
+      if (!cell || !board.contains(cell)) return null;
+      return { cell, x: Number(cell.dataset.x), y: Number(cell.dataset.y) };
+    }
+
+    function moveActor(actor, x, y) {
+      if (!isPassable(x, y, actor)) return;
+      const other = otherCharacter(actor);
+      if (state[other].x === x && state[other].y === y) return;
+      state[actor] = { x, y };
+      clearVisualizationSoft();
+      renderBoard();
+    }
+
+    function endPointerInteraction() {
+      state.dragging = null;
+      state.painting = false;
+    }
+
+    function loadPreset(name) {
+      const level = buildGridFromLevel();
+      state.width = level.width;
+      state.height = level.height;
+      state.grid = level.grid.map(row => [...row]);
+      state.originalGrid = level.baseGrid.map(row => [...row]);
+      state.fireboy = { x: 1, y: 4 };
+      state.watergirl = { x: 2, y: 4 };
+      state.collectibles = new Map();
+      state.collected = { ruby: 0, sapphire: 0 };
+      state.mechanisms = {};
+      state.targets = { fireboy: null, watergirl: null };
+      if (name === "lavaShortcut") {
+        state.fireboy = { x: 1, y: 5 };
+        state.watergirl = { x: 13, y: 5 };
+        state.targets.fireboy = { x: 13, y: 5 };
+        for (let x = 4; x <= 10; x += 1) state.grid[5][x] = "lava";
+        for (let x = 2; x <= 12; x += 1) state.grid[3][x] = "plain";
+        for (let x = 2; x <= 12; x += 1) state.grid[7][x] = "plain";
+        state.grid[5][5] = "wall";
+        state.grid[5][9] = "wall";
+        state.collectibles.set(keyOf(3, 5), "ruby");
+        state.collectibles.set(keyOf(10, 5), "ruby");
+        state.collectibles.set(keyOf(6, 7), "sapphire");
+      }
+
+      if (name === "waterMaze") {
+        state.fireboy = { x: 1, y: 1 };
+        state.watergirl = { x: 13, y: 8 };
+        for (let y = 1; y <= 7; y += 1) state.grid[y][4] = "water";
+        for (let y = 2; y <= 8; y += 1) state.grid[y][8] = "water";
+        for (let x = 2; x <= 11; x += 1) state.grid[6][x] = "wall";
+        for (let x = 5; x <= 10; x += 1) state.grid[2][x] = "wall";
+        state.grid[6][6] = "plain";
+        state.grid[3][4] = "plain";
+        state.grid[2][4] = "wall";
+        state.grid[2][8] = "plain";
+        state.collectibles.set(keyOf(8, 5), "sapphire");
+        state.collectibles.set(keyOf(12, 2), "sapphire");
+      }
+
+      if (name === "mudChallenge") {
+        state.fireboy = { x: 1, y: 5 };
+        state.watergirl = { x: 13, y: 5 };
+        for (let x = 3; x <= 11; x += 1) state.grid[5][x] = "mud";
+        for (let x = 2; x <= 6; x += 1) state.grid[2][x] = "lava";
+        for (let x = 8; x <= 12; x += 1) state.grid[2][x] = "water";
+        for (let x = 2; x <= 6; x += 1) state.grid[8][x] = "water";
+        for (let x = 8; x <= 12; x += 1) state.grid[8][x] = "lava";
+        state.grid[5][7] = "plain";
+        state.collectibles.set(keyOf(7, 2), "ruby");
+        state.collectibles.set(keyOf(7, 8), "sapphire");
+      }
+
+      if (name === "coopDoor") {
+        state.fireboy = { x: 1, y: 5 };
+        state.watergirl = { x: 1, y: 6 };
+        state.targets.fireboy = { x: 13, y: 5 };
+        state.targets.watergirl = { x: 13, y: 6 };
+        for (let x = 3; x <= 11; x += 1) {
+          state.grid[5][x] = "gate";
+          state.mechanisms[keyOf(x, 5)] = false;
+        }
+        state.grid[5][5] = "gate";
+        state.mechanisms[keyOf(5, 5)] = false;
+        state.grid[4][11] = "button";
+        state.grid[3][3] = "lava";
+        state.grid[3][9] = "lava";
+        state.grid[7][3] = "water";
+        state.grid[7][9] = "water";
+        state.grid[5][6] = "plain";
+        state.mechanisms[keyOf(5, 6)] = true;
+        state.grid[5][7] = "plain";
+        state.mechanisms[keyOf(5, 7)] = true;
+        state.grid[5][8] = "plain";
+        state.mechanisms[keyOf(5, 8)] = true;
+        state.collectibles.set(keyOf(13, 3), "ruby");
+        state.collectibles.set(keyOf(13, 7), "sapphire");
+      }
+
+      clearVisualizationSoft();
+      renderAll();
+    }
+
+
+    board.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
+
+    board.addEventListener("pointerdown", (event) => {
+      const data = cellFromEvent(event);
+      if (!data) return;
+      data.cell.setPointerCapture?.(event.pointerId);
+      const actor = isActor(data.x, data.y);
+      if (actor && event.button === 0) {
+        state.dragging = actor;
+        return;
+      }
+      state.painting = true;
+      if (event.button === 0) setTerrain(data.x, data.y, state.brush, state.brush === "gate");
+    });
+
+    board.addEventListener("pointerover", (event) => {
+      const data = cellFromEvent(event);
+      if (!data) return;
+      if (state.dragging) {
+        if ((event.buttons & 1) !== 1) {
+          endPointerInteraction();
+          return;
+        }
+        moveActor(state.dragging, data.x, data.y);
+        return;
+      }
+      if (state.painting && event.buttons === 1 && state.brush !== "gate") setTerrain(data.x, data.y, state.brush, true);
+    });
+
+    board.addEventListener("pointermove", (event) => {
+      if (!state.dragging && !state.painting) return;
+      if ((state.dragging || state.painting) && (event.buttons & 1) !== 1) {
+        endPointerInteraction();
+        return;
+      }
+      const data = cellFromPoint(event);
+      if (!data) return;
+      if (state.dragging) {
+        moveActor(state.dragging, data.x, data.y);
+        return;
+      }
+      if (state.painting && event.buttons === 1 && state.brush !== "gate") setTerrain(data.x, data.y, state.brush, true);
+    });
+
+    window.addEventListener("pointerup", endPointerInteraction);
+    window.addEventListener("pointercancel", endPointerInteraction);
+    window.addEventListener("blur", endPointerInteraction);
+    board.addEventListener("lostpointercapture", endPointerInteraction);
+
+    terrainTools.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-terrain]");
+      if (!btn) return;
+      state.brush = btn.dataset.terrain;
+      renderTerrainTools();
+    });
+
+    algorithmButtons.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-algorithm]");
+      if (!btn) return;
+      state.algorithm = btn.dataset.algorithm;
+      clearVisualizationSoft();
+      renderAlgorithmButtons();
+    });
+
+    heuristicWeight.addEventListener("input", () => {
+      weightValue.textContent = Number(heuristicWeight.value).toFixed(1);
+      clearVisualizationSoft();
+    });
+
+    characterSelect.addEventListener("change", () => {
+      state.activeCharacter = characterSelect.value;
+      state.costs = characterDefs[state.activeCharacter].costs;
+      clearVisualizationSoft();
+    });
+
+    clearBtn.addEventListener("click", () => resetGrid());
+    presetBtn.addEventListener("click", () => {
+      loadPreset(presets[state.presetIndex]);
+      state.presetIndex = (state.presetIndex + 1) % presets.length;
+    });
+    clearVizBtn.addEventListener("click", clearVisualization);
+    runBtn.addEventListener("click", playAnimation);
+    pauseBtn.addEventListener("click", stopAnimation);
+    stepBtn.addEventListener("click", () => {
+      stopAnimation();
+      if (!state.animation || state.animation.index >= state.animation.steps.length) buildAnimation();
+      if (!applyStep()) finishAnimation();
+    });
+
+    resetGrid();
+  </script>
+</body>
+</html>
