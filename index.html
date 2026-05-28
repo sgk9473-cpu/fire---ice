@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>森林冰火人格子解谜</title>
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="topbar">
+        <div>
+          <h1>森林冰火人格子解谜</h1>
+          <p id="statusText">收集对应宝石，让火人进火门、冰人进冰门。</p>
+        </div>
+        <div class="actions">
+          <button data-level="level1" type="button">Level 1</button>
+          <button data-level="level2" type="button">Level 2</button>
+          <button data-level="level3" type="button">Level 3</button>
+          <button id="resetBtn" type="button">重置</button>
+          <button id="clearPathBtn" type="button">清除路径</button>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="boardPanel">
+          <div class="boardStack">
+            <div id="board" class="board" aria-label="游戏地图"></div>
+            <div id="legend" class="legend legendBar"></div>
+          </div>
+        </div>
+
+        <aside class="sidePanel">
+          <div class="panelSection">
+            <h2>搜索播放</h2>
+            <div class="pathButtons">
+              <button data-run="bfs" type="button">Run BFS</button>
+              <button data-run="dijkstra" type="button">Run Dijkstra</button>
+              <button data-run="astar" type="button">Run A*</button>
+              <button id="playSearchBtn" type="button">Play Search Process</button>
+              <button id="playSolutionBtn" type="button">Play Final Solution</button>
+              <button id="pauseBtn" type="button">Pause</button>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <h2>状态</h2>
+            <dl class="stats">
+              <div><dt>火宝石</dt><dd id="fireGemStat">0 / 0</dd></div>
+              <div><dt>冰宝石</dt><dd id="iceGemStat">0 / 0</dd></div>
+              <div><dt>机关门</dt><dd id="doorStat">关闭</dd></div>
+              <div><dt>算法</dt><dd id="algorithmStat">-</dd></div>
+              <div><dt>展开状态</dt><dd id="expandedStat">0</dd></div>
+              <div><dt>访问状态</dt><dd id="visitedStat">0</dd></div>
+              <div><dt>边界队列</dt><dd id="frontierStat">0</dd></div>
+              <div><dt>运行时间</dt><dd id="runtimeStat">0ms</dd></div>
+              <div><dt>播放进度</dt><dd id="stepStat">0 / 0</dd></div>
+              <div><dt>当前动作</dt><dd id="actionStat">-</dd></div>
+            </dl>
+          </div>
+
+          <div class="panelSection">
+            <h2>效率对比</h2>
+            <div class="comparisonWrap">
+              <table class="comparisonTable">
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Found</th>
+                    <th>Optimal</th>
+                    <th>Path Cost</th>
+                    <th>Action Count</th>
+                    <th>Expanded States</th>
+                    <th>Visited States</th>
+                    <th>Max Frontier Size</th>
+                    <th>Runtime</th>
+                  </tr>
+                </thead>
+                <tbody id="comparisonBody"></tbody>
+              </table>
+            </div>
+            <p class="heuristicNote">
+              A*: h = manhattan(fire, fireExit) + manhattan(ice, iceExit)。该 heuristic 忽略门、按钮、箱子，因此通常低估真实成本。
+            </p>
+            <ul class="algorithmNotes">
+              <li>BFS 通常扩展最多状态。</li>
+              <li>Dijkstra 适合加权动作。</li>
+              <li>A* 通常扩展更少状态，但依赖 heuristic 质量。</li>
+            </ul>
+          </div>
+
+        </aside>
+      </section>
+    </main>
+
+    <script src="./js/bundle.js"></script>
+  </body>
+</html>
